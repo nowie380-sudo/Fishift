@@ -1,4 +1,3 @@
-```javascript
 // ========================================
 // FISHIFT - HARPOON SYSTEM
 // Fysieke speer met vaste heen- en terugbaan
@@ -161,9 +160,10 @@ export function createHarpoon({
 
         caughtFish.push(fish);
 
-        onStatus(
-            `${caughtFish.length} VIS(SEN) AAN DE SPEER`
-        );
+onStatus(
+    caughtFish.length + " VIS(SEN) AAN DE SPEER"
+);
+
 
     }
 
