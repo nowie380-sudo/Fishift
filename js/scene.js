@@ -382,14 +382,6 @@ export function createScene(container) {
     // SPELERPOSITIES
     // ========================================
 
-    const playerStart = new THREE.Vector3(0, 1.7, 5.2);
-
-    // Eerste harpoenstation is voorlopig het actieve station
-    const harpoonSeatPosition = new THREE.Vector3(-5.7, 1.7, -3.2);
-
-    camera.position.copy(playerStart);
-    camera.lookAt(0, 1.7, -5);
-
     return {
         scene,
         camera,
