@@ -1,6 +1,6 @@
 // ========================================
 // FISHIFT - SCENE
-// 3D-wereld, boot en camera
+// First-person harpoon view
 // ========================================
 
 import * as THREE from "three";
@@ -18,9 +18,6 @@ export function createScene(container) {
         0.1,
         200
     );
-
-    camera.position.set(0, 1.8, 6);
-    camera.lookAt(0, 1.9, -5);
 
     // RENDERER
     const renderer = new THREE.WebGLRenderer({
@@ -85,7 +82,7 @@ export function createScene(container) {
     windowLight.position.set(0, 2, -5);
     scene.add(windowLight);
 
-    // HULPFUNCTIE VOOR BLOKKEN
+    // HULPFUNCTIE
     function makeBox(width, height, depth, material, x, y, z) {
 
         const mesh = new THREE.Mesh(
@@ -101,22 +98,16 @@ export function createScene(container) {
 
     // BOOTINTERIEUR
 
-    // Vloer
     makeBox(14, 0.3, 15, materials.floor, 0, -0.15, 0);
-
-    // Plafond
     makeBox(14, 0.3, 15, materials.wall, 0, 5, 0);
 
-    // Zijwanden
     makeBox(0.3, 5, 15, materials.wall, -7, 2.5, 0);
     makeBox(0.3, 5, 15, materials.wall, 7, 2.5, 0);
 
-    // Achterwand
     makeBox(14, 5, 0.3, materials.wall, 0, 2.5, 7);
 
     // ONDERWATERVENSTER
 
-    // Achtergrond van de oceaan
     const ocean = new THREE.Mesh(
         new THREE.PlaneGeometry(30, 20),
         materials.ocean
@@ -125,23 +116,14 @@ export function createScene(container) {
     ocean.position.set(0, 2.3, -11);
     scene.add(ocean);
 
-    // BELANGRIJK:
-    // Geen massief blok meer achter het raam!
-    // Alleen vier metalen randen.
+    // RAAMKOZIJN
 
-    // Bovenrand
     makeBox(10.5, 0.22, 0.35, materials.metal, 0, 4.45, -6.7);
-
-    // Onderrand
     makeBox(10.5, 0.22, 0.35, materials.metal, 0, 0.25, -6.7);
 
-    // Linkerrand
     makeBox(0.22, 4.2, 0.35, materials.metal, -5.25, 2.35, -6.7);
-
-    // Rechterrand
     makeBox(0.22, 4.2, 0.35, materials.metal, 5.25, 2.35, -6.7);
 
-    // Dunne glazen laag
     const glass = new THREE.Mesh(
         new THREE.PlaneGeometry(9.9, 3.9),
         materials.glass
@@ -158,7 +140,8 @@ export function createScene(container) {
     cannonPivot.position.set(0, 1.35, 3.2);
     scene.add(cannonPivot);
 
-    // Onderstel
+    // ONDERSTEL
+
     const base = new THREE.Mesh(
         new THREE.CylinderGeometry(0.65, 0.8, 0.3, 12),
         materials.darkMetal
@@ -167,12 +150,14 @@ export function createScene(container) {
     base.position.y = 0.15;
     cannonPivot.add(base);
 
-    // Draaiend kanon
+    // DRAAIEND KANON
+
     const cannon = new THREE.Group();
     cannon.position.y = 0.35;
     cannonPivot.add(cannon);
 
-    // Kanonlichaam
+    // KANONLICHAAM
+
     const body = new THREE.Mesh(
         new THREE.BoxGeometry(0.65, 0.55, 1.1),
         materials.metal
@@ -181,7 +166,8 @@ export function createScene(container) {
     body.position.z = -0.25;
     cannon.add(body);
 
-    // Kanonbuis
+    // KANONBUIS
+
     const barrel = new THREE.Mesh(
         new THREE.CylinderGeometry(0.13, 0.19, 2.4, 12),
         materials.darkMetal
@@ -191,7 +177,8 @@ export function createScene(container) {
     barrel.position.set(0, 0.05, -1.55);
     cannon.add(barrel);
 
-    // Monding
+    // MONDING
+
     const muzzle = new THREE.Mesh(
         new THREE.TorusGeometry(0.15, 0.045, 8, 16),
         materials.metal
@@ -200,7 +187,18 @@ export function createScene(container) {
     muzzle.position.set(0, 0.05, -2.75);
     cannon.add(muzzle);
 
+    // FIRST-PERSONCAMERA
+    // De camera zit nu achter de launcher.
+    // Omdat hij aan cannonPivot vastzit, draait
+    // het zicht mee wanneer de speler richt.
+
+    camera.position.set(0, 0.75, 2.6);
+    camera.rotation.set(0, 0, 0);
+
+    cannonPivot.add(camera);
+
     // TERUGGEVEN
+
     return {
         scene,
         camera,
