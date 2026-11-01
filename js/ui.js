@@ -1,4 +1,3 @@
-```javascript
 // ========================================
 // FISHIFT - UI
 // HUD, vangstenteller en meldingen
@@ -113,4 +112,3 @@ export function createUI() {
     };
 
 }
-```
