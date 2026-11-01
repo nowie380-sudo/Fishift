@@ -1,4 +1,3 @@
-```javascript
 // ========================================
 // FISHIFT - FISH SYSTEM
 // Zwemmende vissen en botsingsdetectie
@@ -347,4 +346,3 @@ export function createFishSystem(scene) {
     };
 
 }
-```
