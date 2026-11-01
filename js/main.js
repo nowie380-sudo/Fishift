@@ -114,11 +114,14 @@ function animate(currentTime) {
 
     game.lastTime = currentTime;
 
-    // Vissen laten zwemmen
-    fishSystem.update(delta);
+    // Kanon besturen
+controls.update(delta);
 
-    // Speer bewegen en botsingen controleren
-    harpoon.update(delta);
+// Vissen laten zwemmen
+fishSystem.update(delta);
+
+// Speer bewegen en botsingen controleren
+harpoon.update(delta);
 
     // 3D-beeld tekenen
     renderer.render(scene, camera);
