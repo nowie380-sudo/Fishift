@@ -1,4 +1,3 @@
-```javascript
 // ========================================
 // FISHIFT - MAIN
 // Hoofdscript van de game
@@ -155,4 +154,3 @@ ui.setMessage("Richt met A en D — klik om te schieten");
 requestAnimationFrame(animate);
 
 console.log("FISHIFT gestart!");
-```
