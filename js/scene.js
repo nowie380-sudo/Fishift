@@ -1,26 +1,23 @@
+
  // ========================================
  // FISHIFT - SCENE
- // Suship-style first-person fishing view
+ // Onderzeeër + harpoenstation
  // ========================================
 
 import * as THREE from "three";
 
 export function createScene(container) {
 
-    // SCENE
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x07152e);
 
-    // CAMERA - VAST FIRST-PERSONPUNT
+    // CAMERA
     const camera = new THREE.PerspectiveCamera(
-        35,
+        75,
         window.innerWidth / window.innerHeight,
         0.1,
         200
     );
-
-    camera.position.set(0, 2.5, 5.8);
-    camera.lookAt(0, 2.35, -8);
 
     // RENDERER
     const renderer = new THREE.WebGLRenderer({
@@ -37,7 +34,6 @@ export function createScene(container) {
 
     // MATERIALEN
     const materials = {
-
         metal: new THREE.MeshStandardMaterial({
             color: 0x59636e,
             roughness: 0.65,
@@ -57,7 +53,7 @@ export function createScene(container) {
         }),
 
         wall: new THREE.MeshStandardMaterial({
-            color: 0x30323d,
+            color: 0x303b49,
             roughness: 0.95
         }),
 
@@ -93,7 +89,6 @@ export function createScene(container) {
 
     // HULPFUNCTIE
     function makeBox(width, height, depth, material, x, y, z) {
-
         const mesh = new THREE.Mesh(
             new THREE.BoxGeometry(width, height, depth),
             material
@@ -101,26 +96,34 @@ export function createScene(container) {
 
         mesh.position.set(x, y, z);
         scene.add(mesh);
-
         return mesh;
     }
 
-    // BOOTINTERIEUR
-    makeBox(16, 0.3, 15, materials.floor, 0, -1.3, 0);
-    makeBox(16, 0.3, 15, materials.wall, 0, 6.5, 0);
+    // ONDERZEEËR RUIMTE
+    // Vloer heeft bovenkant op y = 0.
 
-    makeBox(0.4, 8, 15, materials.wall, -8, 2.5, 0);
-    makeBox(0.4, 8, 15, materials.wall, 8, 2.5, 0);
+    makeBox(16, 0.3, 16, materials.floor, 0, -0.15, 0);
 
-    makeBox(16, 8, 0.4, materials.wall, 0, 2.5, 7);
+    // Plafond
+    makeBox(16, 0.3, 16, materials.wall, 0, 5.15, 0);
 
-    // GROOT ONDERWATERVENSTER
-    // Het raam vult bijna het hele camerabeeld.
+    // Zijwanden
+    makeBox(0.3, 5, 16, materials.wall, -8, 2.5, 0);
+    makeBox(0.3, 5, 16, materials.wall, 8, 2.5, 0);
 
+    // Achterwand
+    makeBox(16, 5, 0.3, materials.wall, 0, 2.5, 7.85);
+
+    // Extra metalen vloerplaten
+    for (let x = -6; x <= 6; x += 2) {
+        makeBox(0.035, 0.015, 15, materials.metal, x, 0.015, 0);
+    }
+
+    // ONDERWATERVENSTER
     const windowZ = -5.5;
     const windowCenterY = 2.5;
 
-    // Donkere rand rondom het raam
+    // Buitenste raamrand
     makeBox(14.5, 0.55, 0.65, materials.frame,
         0, 6.05, windowZ);
 
@@ -133,7 +136,7 @@ export function createScene(container) {
     makeBox(0.65, 7.1, 0.65, materials.frame,
         6.95, windowCenterY, windowZ);
 
-    // Binnenrand voor een dikkere metalen uitstraling
+    // Binnenste metalen rand
     makeBox(13.3, 0.12, 0.35, materials.metal,
         0, 5.7, -5.85);
 
@@ -146,7 +149,7 @@ export function createScene(container) {
     makeBox(0.12, 6.4, 0.35, materials.metal,
         6.6, windowCenterY, -5.85);
 
-    // GLAS
+    // Glas
     const glass = new THREE.Mesh(
         new THREE.PlaneGeometry(13.1, 6.2),
         materials.glass
@@ -156,7 +159,7 @@ export function createScene(container) {
     glass.renderOrder = 2;
     scene.add(glass);
 
-    // DONKERE OCEAAN
+    // OCEAAN
     const ocean = new THREE.Mesh(
         new THREE.PlaneGeometry(35, 25),
         materials.ocean
@@ -165,15 +168,13 @@ export function createScene(container) {
     ocean.position.set(0, 2.5, -12);
     scene.add(ocean);
 
-    // HARPOENLAUNCHER
-    // De launcher draait, maar de camera niet.
-
+    // HARPOENSTATION
     const cannonPivot = new THREE.Group();
 
     cannonPivot.position.set(0, 1.35, 3.2);
     scene.add(cannonPivot);
 
-    // ONDERSTEL
+    // Onderstel
     const base = new THREE.Mesh(
         new THREE.CylinderGeometry(0.65, 0.8, 0.3, 12),
         materials.darkMetal
@@ -182,12 +183,11 @@ export function createScene(container) {
     base.position.y = 0.15;
     cannonPivot.add(base);
 
-    // DRAAIEND KANON
+    // Kanon
     const cannon = new THREE.Group();
     cannon.position.y = 0.35;
     cannonPivot.add(cannon);
 
-    // KANONLICHAAM
     const body = new THREE.Mesh(
         new THREE.BoxGeometry(0.65, 0.55, 1.1),
         materials.metal
@@ -196,7 +196,6 @@ export function createScene(container) {
     body.position.z = -0.25;
     cannon.add(body);
 
-    // KANONBUIS
     const barrel = new THREE.Mesh(
         new THREE.CylinderGeometry(0.13, 0.19, 2.4, 12),
         materials.darkMetal
@@ -206,7 +205,6 @@ export function createScene(container) {
     barrel.position.set(0, 0.05, -1.55);
     cannon.add(barrel);
 
-    // MONDING
     const muzzle = new THREE.Mesh(
         new THREE.TorusGeometry(0.15, 0.045, 8, 16),
         materials.metal
@@ -215,14 +213,35 @@ export function createScene(container) {
     muzzle.position.set(0, 0.05, -2.75);
     cannon.add(muzzle);
 
-    // CAMERA BLIJFT VAST STAAN
-    // Niet toevoegen aan cannonPivot!
+    // HARPOENSTATION - VLOERMARKERING
+    const stationMarker = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.25, 1.25, 0.035, 32),
+        new THREE.MeshStandardMaterial({
+            color: 0x315c72,
+            metalness: 0.5,
+            roughness: 0.7
+        })
+    );
 
-    // TERUGGEVEN
+    stationMarker.position.set(0, 0.025, 3.2);
+    scene.add(stationMarker);
+
+    // STARTPOSITIE VAN DE SPELER
+    const playerStart = new THREE.Vector3(-3, 1.7, 3.5);
+
+    // POSITIE VOOR HET ZITTEN BIJ HET KANON
+    const harpoonSeatPosition = new THREE.Vector3(0, 1.7, 4.7);
+
+    // CAMERA START OP DE STARTPOSITIE
+    camera.position.copy(playerStart);
+    camera.lookAt(0, 1.7, -5);
+
     return {
         scene,
         camera,
         renderer,
-        cannonPivot
+        cannonPivot,
+        playerStart,
+        harpoonSeatPosition
     };
 }
