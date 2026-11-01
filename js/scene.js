@@ -229,15 +229,18 @@ export function createScene(container) {
     panRim.position.y = 0.84;
     panGroup.add(panRim);
 
+    
     // ========================================
-    // HARPOENSTATIONS
+    // VIER HARPOENSTATIONS
     // ========================================
 
     function createHarpoonStation(x, z, rotationY) {
 
         const pivot = new THREE.Group();
+
         pivot.position.set(x, 1.2, z);
         pivot.rotation.y = rotationY;
+
         scene.add(pivot);
 
         const base = new THREE.Mesh(
@@ -275,6 +278,53 @@ export function createScene(container) {
 
         return pivot;
     }
+
+    // Alle vier kanonnen
+    const cannonPivots = [
+        createHarpoonStation(-7.8, -3.2, Math.PI / 2),
+        createHarpoonStation(-7.8, 3.2, Math.PI / 2),
+        createHarpoonStation(7.8, -3.2, -Math.PI / 2),
+        createHarpoonStation(7.8, 3.2, -Math.PI / 2)
+    ];
+
+    // ========================================
+    // VIER ZITPOSITIES
+    // ========================================
+
+    const harpoonSeatPositions = [
+        {
+            position: new THREE.Vector3(-5.7, 1.7, -3.2),
+            yaw: Math.PI / 2
+        },
+        {
+            position: new THREE.Vector3(-5.7, 1.7, 3.2),
+            yaw: Math.PI / 2
+        },
+        {
+            position: new THREE.Vector3(5.7, 1.7, -3.2),
+            yaw: -Math.PI / 2
+        },
+        {
+            position: new THREE.Vector3(5.7, 1.7, 3.2),
+            yaw: -Math.PI / 2
+        }
+    ];
+
+    // STARTPOSITIE
+    const playerStart = new THREE.Vector3(0, 1.7, 5.2);
+
+    camera.position.copy(playerStart);
+    camera.lookAt(0, 1.7, -5);
+
+    return {
+        scene,
+        camera,
+        renderer,
+        cannonPivots,
+        playerStart,
+        harpoonSeatPositions
+    };
+
 
     // Twee harpoenen aan de linker lange zijde
     const cannonPivot = createHarpoonStation(-7.8, -3.2, Math.PI / 2);
