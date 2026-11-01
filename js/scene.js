@@ -1,4 +1,3 @@
-```javascript
 // ========================================
 // FISHIFT - SCENE
 // 3D-wereld, boot en camera
@@ -209,4 +208,3 @@ export function createScene(container) {
         cannonPivot
     };
 }
-```
