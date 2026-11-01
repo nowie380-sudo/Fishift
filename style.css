@@ -1,1 +1,216 @@
+```css
+/* =========================
+   FISHIFT - BASIS STYLING
+========================= */
 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #06131c;
+    color: #eaf7ff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+#game {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 3D CANVAS */
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* =========================
+   HUD
+========================= */
+
+#hud {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 25px 30px;
+    pointer-events: none;
+    text-shadow: 0 2px 8px #00101b;
+}
+
+/* LOGO */
+
+.brand {
+    font-size: 29px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #ffffff;
+}
+
+/* BESTURING */
+
+.controls {
+    position: absolute;
+    top: 27px;
+    right: 30px;
+    text-align: right;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #b7d6e4;
+}
+
+.controls strong {
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+/* STATUS */
+
+#status {
+    position: absolute;
+    top: 110px;
+    right: 30px;
+    color: #8de4e9;
+    font-size: 11px;
+    letter-spacing: 2px;
+}
+
+/* VANGSTENTELLER */
+
+#catch-counter {
+    position: absolute;
+    left: 30px;
+    bottom: 30px;
+    padding: 13px 18px;
+    background: rgba(2, 15, 24, 0.75);
+    border: 1px solid rgba(159, 224, 238, 0.25);
+    border-radius: 8px;
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+#catch-count {
+    color: #8df0c1;
+    font-size: 23px;
+    margin-left: 8px;
+}
+
+/* =========================
+   RICHTPUNT
+========================= */
+
+#crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+#crosshair div {
+    position: absolute;
+    left: 11px;
+    top: 1px;
+    width: 2px;
+    height: 22px;
+    background: rgba(226, 250, 255, 0.9);
+    border-radius: 2px;
+}
+
+#crosshair div::after {
+    content: "";
+    position: absolute;
+    left: -10px;
+    top: 10px;
+    width: 22px;
+    height: 2px;
+    background: rgba(226, 250, 255, 0.9);
+    border-radius: 2px;
+}
+
+/* =========================
+   ON-SCREEN BERICHT
+========================= */
+
+#message {
+    position: absolute;
+    left: 50%;
+    bottom: 35px;
+    transform: translateX(-50%);
+    padding: 10px 18px;
+    background: rgba(2, 15, 24, 0.65);
+    border: 1px solid rgba(159, 224, 238, 0.15);
+    border-radius: 6px;
+    color: #c6e1ed;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+}
+
+/* FOUTMELDING */
+
+#error {
+    position: absolute;
+    z-index: 10;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 80%;
+    padding: 18px 22px;
+    background: #401b20;
+    border: 1px solid #d65b65;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* =========================
+   KLEINE SCHERMEN
+========================= */
+
+@media (max-width: 600px) {
+    #hud {
+        padding: 18px;
+    }
+
+    .brand {
+        font-size: 22px;
+    }
+
+    .controls {
+        top: 65px;
+        right: 18px;
+        font-size: 11px;
+    }
+
+    #status {
+        top: 125px;
+        right: 18px;
+    }
+
+    #catch-counter {
+        left: 18px;
+        bottom: 18px;
+    }
+
+    #message {
+        bottom: 90px;
+        width: max-content;
+        max-width: 90%;
+        text-align: center;
+    }
+}
+```
