@@ -1,310 +1,258 @@
- // ========================================
- // FISHIFT - CONTROLS
- // Rondlopen + harpoenstation
- // ========================================
 
 import * as THREE from "three";
 
 export function createControls({
     camera,
-    renderer,
-    cannonPivot,
-    harpoon,
+    cannonPivots,
+    harpoons,
     playerStart,
-    harpoonSeatPosition,
+    harpoonSeatPositions,
     ui
 }) {
 
-    // ========================================
-    // SPELERINSTELLINGEN
-    // ========================================
+    const keys = {};
 
     const player = {
         position: playerStart.clone(),
-        height: 1.7,
-        speed: 4.5,
-        radius: 0.35
+        speed: 4,
+        height: 1.7
     };
 
-    const keys = {
-        forward: false,
-        backward: false,
-        left: false,
-        right: false
-    };
-
-    let seated = false;
-
-    // Kijkrichting
-    let yaw = 0.36;
+    let seatedStation = -1;
+    let yaw = 0;
     let pitch = 0;
 
-    const mouseSensitivity = 0.002;
     const rotationSpeed = 1.5;
-    const maxCannonAngle = 0.85;
+    const maxAngle = 0.85;
+    const interactionDistance = 2.5;
 
     const direction = new THREE.Vector3();
-    const rightDirection = new THREE.Vector3();
+    const forward = new THREE.Vector3();
+    const right = new THREE.Vector3();
 
-    // ========================================
-    // CAMERA
-    // ========================================
+    camera.position.copy(player.position);
 
-    camera.rotation.order = "YXZ";
-
-    function updateCameraRotation() {
-        camera.rotation.set(pitch, yaw, 0);
-    }
-
-    updateCameraRotation();
-
-    // ========================================
-    // TOETSEN INDRUKKEN
-    // ========================================
+    // ====================================
+    // TOETSEN
+    // ====================================
 
     function keyDown(event) {
 
         const key = event.key.toLowerCase();
+        keys[key] = true;
 
-        if (key === "w") keys.forward = true;
-        if (key === "s") keys.backward = true;
-        if (key === "a") keys.left = true;
-        if (key === "d") keys.right = true;
-
-        // Ga zitten bij het harpoenstation
-        if (key === "e" && !seated) {
-            trySitDown();
+        if (key === "e" && seatedStation === -1) {
+            sitAtNearestStation();
         }
 
-        // Opstaan
-        if (key === "q" && seated) {
+        if (key === "q" && seatedStation !== -1) {
             standUp();
         }
     }
 
     function keyUp(event) {
-
-        const key = event.key.toLowerCase();
-
-        if (key === "w") keys.forward = false;
-        if (key === "s") keys.backward = false;
-        if (key === "a") keys.left = false;
-        if (key === "d") keys.right = false;
+        keys[event.key.toLowerCase()] = false;
     }
 
-    // ========================================
-    // MUISBEWEGING
-    // ========================================
+    // ====================================
+    // MUIS
+    // ====================================
 
     function mouseMove(event) {
 
-        if (seated) return;
+        if (seatedStation !== -1) return;
 
-        if (document.pointerLockElement !== renderer.domElement) {
-            return;
-        }
+        if (document.pointerLockElement !== document.body) return;
 
-        yaw -= event.movementX * mouseSensitivity;
-        pitch -= event.movementY * mouseSensitivity;
+        yaw -= event.movementX * 0.002;
+        pitch -= event.movementY * 0.002;
 
         pitch = Math.max(
             -1.2,
             Math.min(1.2, pitch)
         );
 
-        updateCameraRotation();
+        camera.rotation.order = "YXZ";
+        camera.rotation.set(pitch, yaw, 0);
     }
-
-    // ========================================
-    // MUISKLIK
-    // ========================================
 
     function mouseDown(event) {
 
         if (event.button !== 0) return;
 
-        if (seated) {
-            harpoon.shoot();
-            return;
-        }
+        if (seatedStation !== -1) {
+            const harpoon = harpoons[seatedStation];
 
-        // Klik om de muisbesturing te activeren
-        if (document.pointerLockElement !== renderer.domElement) {
-            renderer.domElement.requestPointerLock();
+            if (harpoon) {
+                harpoon.shoot();
+            }
+        } else {
+            document.body.requestPointerLock();
         }
     }
 
-    // ========================================
-    // HARPOENSTATION
-    // ========================================
+    // ====================================
+    // HARPOENSTATION ZOEKEN
+    // ====================================
 
-    function trySitDown() {
+    function sitAtNearestStation() {
 
-        const distance = camera.position.distanceTo(
-            cannonPivot.position
-        );
+        let nearest = -1;
+        let nearestDistance = Infinity;
 
-        if (distance > 2.3) {
-            ui.setMessage("Loop naar het harpoenstation");
-            return;
+        for (let i = 0; i < harpoonSeatPositions.length; i++) {
+
+            const seat = harpoonSeatPositions[i];
+
+            const distance = player.position.distanceTo(
+                seat.position
+            );
+
+            if (
+                distance < interactionDistance &&
+                distance < nearestDistance
+            ) {
+                nearest = i;
+                nearestDistance = distance;
+            }
         }
 
-        seated = true;
+        if (nearest === -1) return;
 
-        // Muisbesturing loslaten
+        seatedStation = nearest;
+
+        const seat = harpoonSeatPositions[nearest];
+
+        camera.position.copy(seat.position);
+
+        yaw = seat.yaw;
+        pitch = 0;
+
+        camera.rotation.order = "YXZ";
+        camera.rotation.set(0, yaw, 0);
+
         if (document.pointerLockElement) {
             document.exitPointerLock();
         }
 
-        // Naar de vaste zitpositie
-        camera.position.copy(harpoonSeatPosition);
-
-        yaw = 0;
-        pitch = 0;
-
-        updateCameraRotation();
-
-        // Kanon recht vooruit zetten
-        cannonPivot.rotation.y = 0;
-
-        ui.setStatus("HARPOENSTATION");
-        ui.setMessage("A / D richten — klik schieten — Q opstaan");
+        if (ui) {
+            ui.setMessage("Je zit bij harpoen " + (nearest + 1) + " — Q om op te staan");
+        }
     }
+
+    // ====================================
+    // OPSTAAN
+    // ====================================
 
     function standUp() {
 
-        seated = false;
-
-        // Terug naar de looppositie
-        player.position.set(
-            0,
-            player.height,
-            5.5
-        );
+        seatedStation = -1;
 
         camera.position.copy(player.position);
 
-        yaw = 0;
-        pitch = 0;
+        camera.rotation.order = "YXZ";
+        camera.rotation.set(pitch, yaw, 0);
 
-        updateCameraRotation();
-
-        ui.setStatus("ONDERZEEËR");
-        ui.setMessage("WASD lopen — muis kijken — E bij station");
+        if (ui) {
+            ui.setMessage("WASD om te lopen — E bij een harpoen");
+        }
     }
 
-    // ========================================
-    // SPELERBEWEGING
-    // ========================================
+    // ====================================
+    // LOPEN
+    // ====================================
 
-    function movePlayer(delta) {
+    function updateWalking(delta) {
 
-        direction.set(0, 0, 0);
-
-        // Vooruit en achteruit
-        if (keys.forward) direction.z -= 1;
-        if (keys.backward) direction.z += 1;
-
-        // Links en rechts
-        if (keys.left) direction.x -= 1;
-        if (keys.right) direction.x += 1;
-
-        if (direction.lengthSq() === 0) return;
-
-        direction.normalize();
-
-        // Beweging afhankelijk van kijkrichting
-        rightDirection.set(
-            Math.cos(yaw),
-            0,
-            Math.sin(yaw)
-        );
-
-        const forward = new THREE.Vector3(
+        forward.set(
             -Math.sin(yaw),
             0,
             -Math.cos(yaw)
         );
 
-        const movement = new THREE.Vector3();
-
-        movement.addScaledVector(
-            forward,
-            -direction.z
+        right.set(
+            Math.cos(yaw),
+            0,
+            -Math.sin(yaw)
         );
 
-        movement.addScaledVector(
-            rightDirection,
-            direction.x
-        );
+        direction.set(0, 0, 0);
 
-        movement.normalize();
-        movement.multiplyScalar(player.speed * delta);
+        if (keys["w"]) direction.add(forward);
+        if (keys["s"]) direction.sub(forward);
+        if (keys["d"]) direction.add(right);
+        if (keys["a"]) direction.sub(right);
 
-        const nextX = player.position.x + movement.x;
-        const nextZ = player.position.z + movement.z;
+        if (direction.lengthSq() > 0) {
 
-        // Eenvoudige grenzen van de onderzeeër
+            direction.normalize();
+
+            player.position.addScaledVector(
+                direction,
+                player.speed * delta
+            );
+        }
+
+        // Eenvoudige begrenzing van de hoofdruimte
         player.position.x = THREE.MathUtils.clamp(
-            nextX,
-            -7.2,
-            7.2
+            player.position.x,
+            -7,
+            7
         );
 
         player.position.z = THREE.MathUtils.clamp(
-            nextZ,
-            -7.1,
-            7.1
+            player.position.z,
+            -6.3,
+            6.3
         );
 
-        // Niet door het grote raam lopen
-        if (player.position.z < -4.7) {
-            player.position.z = -4.7;
-        }
+        player.position.y = player.height;
 
         camera.position.copy(player.position);
     }
 
-    // ========================================
+    // ====================================
+    // HARPOEN RICHTEN
+    // ====================================
+
+    function updateHarpoon(delta) {
+
+        if (seatedStation === -1) return;
+
+        const cannon = cannonPivots[seatedStation];
+
+        if (!cannon) return;
+
+        let turn = 0;
+
+        if (keys["a"]) turn += 1;
+        if (keys["d"]) turn -= 1;
+
+        cannon.rotation.y += turn * rotationSpeed * delta;
+
+        cannon.rotation.y = THREE.MathUtils.clamp(
+            cannon.rotation.y,
+            -maxAngle,
+            maxAngle
+        );
+    }
+
+    // ====================================
     // UPDATE
-    // ========================================
+    // ====================================
 
     function update(delta) {
 
-        if (seated) {
-
-            let cannonDirection = 0;
-
-            if (keys.left) cannonDirection += 1;
-            if (keys.right) cannonDirection -= 1;
-
-            cannonPivot.rotation.y +=
-                cannonDirection * rotationSpeed * delta;
-
-            cannonPivot.rotation.y = THREE.MathUtils.clamp(
-                cannonPivot.rotation.y,
-                -maxCannonAngle,
-                maxCannonAngle
-            );
-
-            return;
-        }
-
-        movePlayer(delta);
-
-        // Bericht wanneer je dicht bij het station bent
-        const distance = camera.position.distanceTo(
-            cannonPivot.position
-        );
-
-        if (distance <= 2.3) {
-            ui.setMessage("Druk op E om bij het harpoenstation te gaan zitten");
+        if (seatedStation === -1) {
+            updateWalking(delta);
+        } else {
+            updateHarpoon(delta);
         }
     }
 
-    // ========================================
-    // EVENT LISTENERS
-    // ========================================
+    // ====================================
+    // EVENTS
+    // ====================================
 
     window.addEventListener("keydown", keyDown);
     window.addEventListener("keyup", keyUp);
@@ -312,22 +260,16 @@ export function createControls({
     window.addEventListener("mousedown", mouseDown);
 
     window.addEventListener("blur", () => {
-        keys.forward = false;
-        keys.backward = false;
-        keys.left = false;
-        keys.right = false;
+        for (const key in keys) {
+            keys[key] = false;
+        }
     });
 
-    // ========================================
-    // START
-    // ========================================
-
-    camera.position.copy(player.position);
-
-    ui.setStatus("ONDERZEEËR");
-    ui.setMessage("Klik om muisbesturing te activeren — WASD om te lopen");
-
     return {
-        update
+        update,
+
+        getSeatedStation() {
+            return seatedStation;
+        }
     };
 }
