@@ -1,7 +1,5 @@
- // ========================================
- // FISHIFT - MAIN
- // Hoofdscript van de game
- // ========================================
+
+import * as THREE from "three";
 
 import { createScene } from "./scene.js";
 import { createFishSystem } from "./fish.js";
@@ -27,7 +25,7 @@ const gameElement = document.getElementById("game");
 const ui = createUI();
 
 // ========================================
-// 3D WERELD MAKEN
+// 3D WERELD
 // ========================================
 
 let world;
@@ -44,49 +42,63 @@ const {
     scene,
     camera,
     renderer,
-    cannonPivot,
+    cannonPivots,
     playerStart,
-    harpoonSeatPosition
+    harpoonSeatPositions
 } = world;
 
 // ========================================
-// VISSEN MAKEN
+// VISSEN
 // ========================================
 
 const fishSystem = createFishSystem(scene);
 
 // ========================================
-// HARPOEN MAKEN
+// VIER HARPOENEN
 // ========================================
 
-const harpoon = createHarpoon({
-    scene,
-    cannonPivot,
-    fishSystem,
+const harpoons = [];
 
-    onCatch: (fish) => {
-        game.catches++;
+for (let i = 0; i < cannonPivots.length; i++) {
 
-        ui.setCount(game.catches);
-        ui.setMessage("+1 " + fish.name);
-    },
+    const harpoon = createHarpoon({
 
-    onStatus: (status) => {
-        ui.setStatus(status);
-    }
-});
+        scene,
+
+        cannonPivot: cannonPivots[i],
+
+        fishSystem,
+
+        onCatch: (fish) => {
+
+            game.catches++;
+
+            ui.setCount(game.catches);
+
+            ui.setMessage("+1 " + fish.name);
+        },
+
+        onStatus: (status) => {
+            ui.setStatus(status);
+        }
+    });
+
+    harpoons.push(harpoon);
+}
 
 // ========================================
 // BESTURING
 // ========================================
 
 const controls = createControls({
+
     camera,
-    renderer,
-    cannonPivot,
-    harpoon,
+    cannonPivots,
+    harpoons,
+
     playerStart,
-    harpoonSeatPosition,
+    harpoonSeatPositions,
+
     ui
 });
 
@@ -107,21 +119,19 @@ function animate(currentTime) {
 
     game.lastTime = currentTime;
 
-    // Speler en kanon besturen
     controls.update(delta);
 
-    // Vissen laten zwemmen
     fishSystem.update(delta);
 
-    // Speer bewegen en botsingen controleren
-    harpoon.update(delta);
+    for (const harpoon of harpoons) {
+        harpoon.update(delta);
+    }
 
-    // Beeld tekenen
     renderer.render(scene, camera);
 }
 
 // ========================================
-// SCHERM AANPASSEN
+// SCHERMAANPASSING
 // ========================================
 
 function resizeGame() {
@@ -142,8 +152,8 @@ window.addEventListener("resize", resizeGame);
 // ========================================
 
 ui.setStatus("ONDERZEEËR GEREED");
-ui.setMessage("Verken de onderzeeër");
+ui.setMessage("WASD om te lopen — E bij een harpoen");
 
 requestAnimationFrame(animate);
 
-console.log("FISHIFT gestart!");
+console.log("FISHIFT gestart met vier harpoenen!");
