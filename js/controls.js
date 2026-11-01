@@ -1,147 +1,69 @@
-```javascript
 // ========================================
 // FISHIFT - CONTROLS
 // Besturing van het harpoenkanon
 // ========================================
 
-export function createControls({
-    cannonPivot,
-    harpoon
-}) {
+export function createControls({ cannonPivot, harpoon }) {
 
-    // ====================================
-    // INSTELLINGEN
-    // ====================================
-
-    const SETTINGS = {
-        rotationSpeed: 1.5,
-
-        // Maximale draaihoek naar links/rechts
-        maxAngle: 0.85
-    };
-
-    // Ingedrukte toetsen
     const keys = {
-        a: false,
-        d: false
+        left: false,
+        right: false
     };
 
-    // Huidige draaihoek
-    let rotation = 0;
+    const rotationSpeed = 1.5;
+    const maxAngle = 0.85;
 
-
-    // ====================================
-    // TOETSEN INDRUKKEN
-    // ====================================
-
-    window.addEventListener("keydown", (event) => {
-
-        const key = event.key.toLowerCase();
-
-        if (key === "a") {
-            keys.a = true;
+    function keyDown(event) {
+        if (event.key.toLowerCase() === "a") {
+            keys.left = true;
         }
 
-        if (key === "d") {
-            keys.d = true;
+        if (event.key.toLowerCase() === "d") {
+            keys.right = true;
+        }
+    }
+
+    function keyUp(event) {
+        if (event.key.toLowerCase() === "a") {
+            keys.left = false;
         }
 
-    });
-
-
-    // ====================================
-    // TOETSEN LOSLATEN
-    // ====================================
-
-    window.addEventListener("keyup", (event) => {
-
-        const key = event.key.toLowerCase();
-
-        if (key === "a") {
-            keys.a = false;
+        if (event.key.toLowerCase() === "d") {
+            keys.right = false;
         }
+    }
 
-        if (key === "d") {
-            keys.d = false;
+    function mouseDown(event) {
+        if (event.button === 0) {
+            harpoon.shoot();
         }
-
-    });
-
-
-    // ====================================
-    // VOORKOMEN DAT TOETSEN VASTBLIJVEN
-    // ====================================
-
-    window.addEventListener("blur", () => {
-
-        keys.a = false;
-        keys.d = false;
-
-    });
-
-
-    // ====================================
-    // SCHIETEN MET LINKERMUISKNOP
-    // ====================================
-
-    window.addEventListener("mousedown", (event) => {
-
-        // Alleen linkermuisknop
-        if (event.button !== 0) return;
-
-        // Niet schieten wanneer de speer nog onderweg is
-        if (!harpoon.isReady()) return;
-
-        harpoon.shoot();
-
-    });
-
-
-    // ====================================
-    // BESTURING BIJWERKEN
-    // ====================================
+    }
 
     function update(delta) {
 
         let direction = 0;
 
-        if (keys.a) {
-            direction -= 1;
-        }
+        if (keys.left) direction += 1;
+        if (keys.right) direction -= 1;
 
-        if (keys.d) {
-            direction += 1;
-        }
+        cannonPivot.rotation.y += direction * rotationSpeed * delta;
 
-        // Kanon draaien
-        rotation +=
-            direction *
-            SETTINGS.rotationSpeed *
-            delta;
-
-        // Draaihoek begrenzen
-        rotation = Math.max(
-            -SETTINGS.maxAngle,
-            Math.min(
-                SETTINGS.maxAngle,
-                rotation
-            )
+        cannonPivot.rotation.y = Math.max(
+            -maxAngle,
+            Math.min(maxAngle, cannonPivot.rotation.y)
         );
-
-        // Alleen het kanon draaien.
-        // De vliegende speer verandert hierdoor NIET van richting.
-        cannonPivot.rotation.y = rotation;
-
     }
 
+    window.addEventListener("keydown", keyDown);
+    window.addEventListener("keyup", keyUp);
+    window.addEventListener("mousedown", mouseDown);
 
-    // ====================================
-    // PUBLIEKE FUNCTIES
-    // ====================================
+    window.addEventListener("blur", () => {
+        keys.left = false;
+        keys.right = false;
+    });
 
     return {
         update
     };
-
 }
-```
