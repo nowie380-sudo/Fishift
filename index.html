@@ -1,1 +1,59 @@
+```html
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <title>Fishift</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+        }
+    }
+    </script>
+</head>
+
+<body>
+
+    <div id="game">
+
+        <div id="hud">
+
+            <div class="brand">FISHIFT</div>
+
+            <div class="controls">
+                <p><strong>A / D</strong> — Richten</p>
+                <p><strong>LINKERMUISKLIK</strong> — Schieten</p>
+            </div>
+
+            <div id="status">KANON GEREED</div>
+
+            <div id="catch-counter">
+                GEVANGEN:
+                <strong id="catch-count">0</strong>
+            </div>
+
+        </div>
+
+        <div id="crosshair">
+            <div></div>
+        </div>
+
+        <div id="message">
+            Richt met A en D — klik om te schieten
+        </div>
+
+        <div id="error" hidden></div>
+
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
+```
