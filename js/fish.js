@@ -1,7 +1,3 @@
-// ========================================
-// FISHIFT - FISH SYSTEM
-// Zwemmende vissen en botsingsdetectie
-// ========================================
 
 import * as THREE from "three";
 
@@ -49,40 +45,30 @@ export function createFishSystem(scene) {
     // ====================================
 
     function createMaterial(color) {
-
         return new THREE.MeshStandardMaterial({
             color,
             roughness: 0.55,
             metalness: 0.05
         });
-
     }
 
     // ====================================
-    // VIS MODEL MAKEN
+    // VIS MODEL
     // ====================================
 
     function createFishModel(type) {
 
         const fish = new THREE.Group();
-
         const material = createMaterial(type.color);
 
-        // Lichaam
         const body = new THREE.Mesh(
-            new THREE.SphereGeometry(
-                type.size,
-                12,
-                8
-            ),
+            new THREE.SphereGeometry(type.size, 12, 8),
             material
         );
 
         body.scale.set(1.5, 0.65, 0.65);
-
         fish.add(body);
 
-        // Staart
         const tail = new THREE.Mesh(
             new THREE.ConeGeometry(
                 type.size * 0.55,
@@ -94,10 +80,8 @@ export function createFishSystem(scene) {
 
         tail.rotation.z = -Math.PI / 2;
         tail.position.x = -type.size * 1.45;
-
         fish.add(tail);
 
-        // Bovenste vin
         const fin = new THREE.Mesh(
             new THREE.ConeGeometry(
                 type.size * 0.3,
@@ -109,13 +93,7 @@ export function createFishSystem(scene) {
 
         fin.position.y = type.size * 0.55;
         fin.rotation.z = Math.PI;
-
         fish.add(fin);
-
-        // Oog
-        const eyeMaterial = new THREE.MeshBasicMaterial({
-            color: 0x05090d
-        });
 
         const eye = new THREE.Mesh(
             new THREE.SphereGeometry(
@@ -123,7 +101,9 @@ export function createFishSystem(scene) {
                 8,
                 6
             ),
-            eyeMaterial
+            new THREE.MeshBasicMaterial({
+                color: 0x05090d
+            })
         );
 
         eye.position.set(
@@ -139,7 +119,6 @@ export function createFishSystem(scene) {
             tail,
             type
         };
-
     }
 
     // ====================================
@@ -154,83 +133,70 @@ export function createFishSystem(scene) {
 
         const fishData = createFishModel(type);
 
-        const direction = Math.random() < 0.5 ? 1 : -1;
+        // Kies linker- of rechterzijde
+        const side = Math.random() < 0.5 ? -1 : 1;
 
-        // Verschillende dieptes:
-        // dichtbij, midden en ver weg.
-        const depthOptions = [
-            -7.8,
-            -9.2,
-            -10.8
-        ];
+        // Kies zwemrichting langs de lange zijde
+        const direction = Math.random() < 0.5 ? -1 : 1;
 
-        const depth =
-            depthOptions[
-                Math.floor(Math.random() * depthOptions.length)
-            ];
+        // Vissen zwemmen buiten de zijwanden
+        const x = side * (10.2 + Math.random() * 1.5);
+
+        // Begin buiten het uiteinde van de kamer
+        const z = direction === 1 ? -8.5 : 8.5;
 
         const fish = {
             model: fishData.model,
             tail: fishData.tail,
+
             name: type.name,
 
-            x: direction === 1 ? -7 : 7,
-
+            x,
             y: 0.8 + Math.random() * 3.0,
-
-            z: depth,
+            z,
 
             direction,
+            side,
 
             speed: type.speed *
                 (0.75 + Math.random() * 0.6),
 
             size: type.size,
-
             caught: false,
 
             animation: Math.random() * Math.PI * 2,
-
             type
         };
 
-        fish.model.position.set(
-            fish.x,
-            fish.y,
-            fish.z
-        );
+        fish.model.position.set(x, fish.y, z);
 
-        if (direction === -1) {
-            fish.model.rotation.y = Math.PI;
-        }
+        // Richt de vis langs de zijwand
+        fish.model.rotation.y = direction === 1
+            ? -Math.PI / 2
+            : Math.PI / 2;
 
         scene.add(fish.model);
-
         fishes.push(fish);
-
     }
 
     // ====================================
     // EERSTE VISSEN
     // ====================================
 
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 12; i++) {
 
         spawnFish();
 
         const fish = fishes[i];
 
-        // Verspreid de vissen over het raam
-        fish.x = -6 + Math.random() * 12;
-
-        fish.y = 0.7 + Math.random() * 3.1;
+        // Verspreid over de lengte van beide zijden
+        fish.z = -7 + Math.random() * 14;
 
         fish.model.position.set(
             fish.x,
             fish.y,
             fish.z
         );
-
     }
 
     // ====================================
@@ -245,8 +211,8 @@ export function createFishSystem(scene) {
 
             if (fish.caught) continue;
 
-            // Horizontale beweging
-            fish.x +=
+            // Zwemmen langs de lange zijde
+            fish.z +=
                 fish.speed *
                 fish.direction *
                 delta;
@@ -263,22 +229,18 @@ export function createFishSystem(scene) {
                 fish.z
             );
 
-            // Vis is buiten het raam
+            // Vis heeft het einde van zijn zwemgebied bereikt
             if (
-                fish.x > 8 ||
-                fish.x < -8
+                fish.z > 9 ||
+                fish.z < -9
             ) {
 
                 scene.remove(fish.model);
-
                 fishes.splice(i, 1);
 
                 spawnFish();
-
             }
-
         }
-
     }
 
     // ====================================
@@ -291,24 +253,18 @@ export function createFishSystem(scene) {
 
             if (fish.caught) continue;
 
-            const fishPosition = fish.model.position;
-
             const distance = position.distanceTo(
-                fishPosition
+                fish.model.position
             );
 
             const hitRadius = fish.size * 1.25 + radius;
 
             if (distance < hitRadius) {
-
                 return fish;
-
             }
-
         }
 
         return null;
-
     }
 
     // ====================================
@@ -320,9 +276,7 @@ export function createFishSystem(scene) {
         if (!fish || fish.caught) return false;
 
         fish.caught = true;
-
         return true;
-
     }
 
     // ====================================
@@ -330,19 +284,13 @@ export function createFishSystem(scene) {
     // ====================================
 
     return {
-
         update,
-
         spawnFish,
-
         checkHit,
-
         catchFish,
 
         getFishes() {
             return fishes;
         }
-
     };
-
 }
