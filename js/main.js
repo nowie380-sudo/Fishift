@@ -62,7 +62,6 @@ const {
 const fishSystem = createFishSystem(scene);
 
 
-```javascript
 // ========================================
 // HARPOEN MAKEN
 // ========================================
@@ -86,7 +85,7 @@ const harpoon = createHarpoon({
         ui.setStatus(status);
     }
 });
-```
+
 // ========================================
 // BESTURING
 // ========================================
