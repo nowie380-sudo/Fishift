@@ -9,191 +9,159 @@ export function createControls({
     harpoonSeatPositions,
     ui
 }) {
-
     const keys = {};
 
     const player = {
         position: playerStart.clone(),
-        speed: 4,
-        height: 1.7
+        speed: 4
     };
 
     let seatedStation = -1;
     let yaw = 0;
     let pitch = 0;
 
-    const rotationSpeed = 1.5;
-    const maxAngle = 0.85;
+    const maxAim = 0.65;
+    const aimSpeed = 1.5;
     const interactionDistance = 2.5;
 
-    const direction = new THREE.Vector3();
-    const forward = new THREE.Vector3();
-    const right = new THREE.Vector3();
+    // Bewaar de oorspronkelijke richting van elk kanon
+    const baseRotations = cannonPivots.map(
+        pivot => pivot.rotation.y
+    );
+
+    const aimOffsets = cannonPivots.map(() => 0);
 
     camera.position.copy(player.position);
 
-    // ====================================
-    // TOETSEN
-    // ====================================
-
     function keyDown(event) {
+        keys[event.code] = true;
 
-        const key = event.key.toLowerCase();
-        keys[key] = true;
-
-        if (key === "e" && seatedStation === -1) {
+        if (event.code === "KeyE") {
             sitAtNearestStation();
         }
 
-        if (key === "q" && seatedStation !== -1) {
+        if (event.code === "KeyQ") {
             standUp();
         }
     }
 
     function keyUp(event) {
-        keys[event.key.toLowerCase()] = false;
+        keys[event.code] = false;
     }
 
-    // ====================================
-    // MUIS
-    // ====================================
-
     function mouseMove(event) {
+        if (seatedStation === -1) {
+            if (document.pointerLockElement !== document.body) return;
 
-        if (seatedStation !== -1) return;
+            yaw -= event.movementX * 0.002;
+            pitch -= event.movementY * 0.002;
 
-        if (document.pointerLockElement !== document.body) return;
+            pitch = THREE.MathUtils.clamp(
+                pitch,
+                -1.2,
+                1.2
+            );
 
-        yaw -= event.movementX * 0.002;
-        pitch -= event.movementY * 0.002;
-
-        pitch = Math.max(
-            -1.2,
-            Math.min(1.2, pitch)
-        );
-
-        camera.rotation.order = "YXZ";
-        camera.rotation.set(pitch, yaw, 0);
+            camera.rotation.order = "YXZ";
+            camera.rotation.set(pitch, yaw, 0);
+        }
     }
 
     function mouseDown(event) {
-
         if (event.button !== 0) return;
 
         if (seatedStation !== -1) {
-            const harpoon = harpoons[seatedStation];
-
-            if (harpoon) {
-                harpoon.shoot();
-            }
+            harpoons[seatedStation].shoot();
         } else {
             document.body.requestPointerLock();
         }
     }
 
-    // ====================================
-    // HARPOENSTATION ZOEKEN
-    // ====================================
-
     function sitAtNearestStation() {
+        if (seatedStation !== -1) return;
 
-        let nearest = -1;
+        let nearestIndex = -1;
         let nearestDistance = Infinity;
 
         for (let i = 0; i < harpoonSeatPositions.length; i++) {
-
             const seat = harpoonSeatPositions[i];
 
             const distance = player.position.distanceTo(
                 seat.position
             );
 
-            if (
-                distance < interactionDistance &&
-                distance < nearestDistance
-            ) {
-                nearest = i;
+            if (distance < nearestDistance) {
                 nearestDistance = distance;
+                nearestIndex = i;
             }
         }
 
-        if (nearest === -1) return;
+        if (
+            nearestIndex === -1 ||
+            nearestDistance > interactionDistance
+        ) {
+            ui.setMessage("Loop dichter naar een harpoen");
+            return;
+        }
 
-        seatedStation = nearest;
+        seatedStation = nearestIndex;
 
-        const seat = harpoonSeatPositions[nearest];
+        const seat = harpoonSeatPositions[seatedStation];
 
-        camera.position.copy(seat.position);
-
+        player.position.copy(seat.position);
         yaw = seat.yaw;
         pitch = 0;
 
+        camera.position.copy(seat.position);
         camera.rotation.order = "YXZ";
         camera.rotation.set(0, yaw, 0);
 
-        if (document.pointerLockElement) {
-            document.exitPointerLock();
-        }
+        document.exitPointerLock();
 
-        if (ui) {
-            ui.setMessage("Je zit bij harpoen " + (nearest + 1) + " — Q om op te staan");
-        }
+        ui.setMessage(
+            "A/D richten | Klik om te schieten | Q om op te staan"
+        );
     }
 
-    // ====================================
-    // OPSTAAN
-    // ====================================
-
     function standUp() {
+        if (seatedStation === -1) return;
 
         seatedStation = -1;
 
         camera.position.copy(player.position);
-
         camera.rotation.order = "YXZ";
         camera.rotation.set(pitch, yaw, 0);
 
-        if (ui) {
-            ui.setMessage("WASD om te lopen — E bij een harpoen");
-        }
+        ui.setMessage("WASD om te lopen | E bij een harpoen");
     }
 
-    // ====================================
-    // LOPEN
-    // ====================================
-
     function updateWalking(delta) {
-
-        forward.set(
+        const forward = new THREE.Vector3(
             -Math.sin(yaw),
             0,
             -Math.cos(yaw)
         );
 
-        right.set(
+        const right = new THREE.Vector3(
             Math.cos(yaw),
             0,
             -Math.sin(yaw)
         );
 
-        direction.set(0, 0, 0);
+        const movement = new THREE.Vector3();
 
-        if (keys["w"]) direction.add(forward);
-        if (keys["s"]) direction.sub(forward);
-        if (keys["d"]) direction.add(right);
-        if (keys["a"]) direction.sub(right);
+        if (keys.KeyW) movement.add(forward);
+        if (keys.KeyS) movement.sub(forward);
+        if (keys.KeyD) movement.add(right);
+        if (keys.KeyA) movement.sub(right);
 
-        if (direction.lengthSq() > 0) {
-
-            direction.normalize();
-
-            player.position.addScaledVector(
-                direction,
-                player.speed * delta
-            );
+        if (movement.lengthSq() > 0) {
+            movement.normalize();
+            movement.multiplyScalar(player.speed * delta);
+            player.position.add(movement);
         }
 
-        // Eenvoudige begrenzing van de hoofdruimte
+        // Binnen de centrale kamer blijven
         player.position.x = THREE.MathUtils.clamp(
             player.position.x,
             -7,
@@ -206,70 +174,50 @@ export function createControls({
             6.3
         );
 
-        player.position.y = player.height;
+        player.position.y = 1.7;
 
         camera.position.copy(player.position);
+        camera.rotation.order = "YXZ";
+        camera.rotation.set(pitch, yaw, 0);
     }
 
-    // ====================================
-    // HARPOEN RICHTEN
-    // ====================================
-
-    function updateHarpoon(delta) {
-
+    function updateAiming(delta) {
         if (seatedStation === -1) return;
 
-        const cannon = cannonPivots[seatedStation];
+        const index = seatedStation;
+        let direction = 0;
 
-        if (!cannon) return;
+        if (keys.KeyA) direction += 1;
+        if (keys.KeyD) direction -= 1;
 
-        let turn = 0;
+        aimOffsets[index] += direction * aimSpeed * delta;
 
-        if (keys["a"]) turn += 1;
-        if (keys["d"]) turn -= 1;
-
-        cannon.rotation.y += turn * rotationSpeed * delta;
-
-        cannon.rotation.y = THREE.MathUtils.clamp(
-            cannon.rotation.y,
-            -maxAngle,
-            maxAngle
+        aimOffsets[index] = THREE.MathUtils.clamp(
+            aimOffsets[index],
+            -maxAim,
+            maxAim
         );
+
+        // Basisrichting behouden en alleen de richtcorrectie toevoegen
+        cannonPivots[index].rotation.y =
+            baseRotations[index] + aimOffsets[index];
     }
 
-    // ====================================
-    // UPDATE
-    // ====================================
-
     function update(delta) {
-
         if (seatedStation === -1) {
             updateWalking(delta);
         } else {
-            updateHarpoon(delta);
+            updateAiming(delta);
         }
     }
-
-    // ====================================
-    // EVENTS
-    // ====================================
 
     window.addEventListener("keydown", keyDown);
     window.addEventListener("keyup", keyUp);
     window.addEventListener("mousemove", mouseMove);
     window.addEventListener("mousedown", mouseDown);
 
-    window.addEventListener("blur", () => {
-        for (const key in keys) {
-            keys[key] = false;
-        }
-    });
-
     return {
         update,
-
-        getSeatedStation() {
-            return seatedStation;
-        }
+        getSeatedStation: () => seatedStation
     };
 }
