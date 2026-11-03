@@ -24,7 +24,6 @@ export function createControls({
     const aimSpeed = 1.5;
     const interactionDistance = 2.5;
 
-    // Bewaar de oorspronkelijke richting van elk kanon
     const baseRotations = cannonPivots.map(
         pivot => pivot.rotation.y
     );
@@ -32,6 +31,41 @@ export function createControls({
     const aimOffsets = cannonPivots.map(() => 0);
 
     camera.position.copy(player.position);
+
+    function isInsideWalkableArea(x, z) {
+        // Centrale kamer
+        const inMainRoom =
+            x >= -8.3 && x <= 8.3 &&
+            z >= -6.7 && z <= 6.7;
+
+        // Doorgang naar de linkerkamer
+        const inLeftDoor =
+            x >= -5 && x <= -1 &&
+            z >= -7.5 && z <= -6.3;
+
+        // Doorgang naar de rechterkamer
+        const inRightDoor =
+            x >= 1 && x <= 5 &&
+            z >= -7.5 && z <= -6.3;
+
+        // Batterijkamer
+        const inBatteryRoom =
+            x >= -7.5 && x <= -1.5 &&
+            z >= -11.5 && z <= -7.3;
+
+        // Lege kamer
+        const inEmptyRoom =
+            x >= 1.5 && x <= 7.5 &&
+            z >= -11.5 && z <= -7.3;
+
+        return (
+            inMainRoom ||
+            inLeftDoor ||
+            inRightDoor ||
+            inBatteryRoom ||
+            inEmptyRoom
+        );
+    }
 
     function keyDown(event) {
         keys[event.code] = true;
@@ -50,21 +84,17 @@ export function createControls({
     }
 
     function mouseMove(event) {
-        if (seatedStation === -1) {
-            if (document.pointerLockElement !== document.body) return;
+        if (seatedStation !== -1) return;
 
-            yaw -= event.movementX * 0.002;
-            pitch -= event.movementY * 0.002;
+        if (document.pointerLockElement !== document.body) return;
 
-            pitch = THREE.MathUtils.clamp(
-                pitch,
-                -1.2,
-                1.2
-            );
+        yaw -= event.movementX * 0.002;
+        pitch -= event.movementY * 0.002;
 
-            camera.rotation.order = "YXZ";
-            camera.rotation.set(pitch, yaw, 0);
-        }
+        pitch = THREE.MathUtils.clamp(pitch, -1.2, 1.2);
+
+        camera.rotation.order = "YXZ";
+        camera.rotation.set(pitch, yaw, 0);
     }
 
     function mouseDown(event) {
@@ -158,21 +188,19 @@ export function createControls({
         if (movement.lengthSq() > 0) {
             movement.normalize();
             movement.multiplyScalar(player.speed * delta);
-            player.position.add(movement);
+
+            const nextX = player.position.x + movement.x;
+            const nextZ = player.position.z + movement.z;
+
+            // Apart controleren zodat je langs muren kunt lopen
+            if (isInsideWalkableArea(nextX, player.position.z)) {
+                player.position.x = nextX;
+            }
+
+            if (isInsideWalkableArea(player.position.x, nextZ)) {
+                player.position.z = nextZ;
+            }
         }
-
-        // Binnen de centrale kamer blijven
-        player.position.x = THREE.MathUtils.clamp(
-            player.position.x,
-            -7,
-            7
-        );
-
-        player.position.z = THREE.MathUtils.clamp(
-            player.position.z,
-            -6.3,
-            6.3
-        );
 
         player.position.y = 1.7;
 
@@ -198,7 +226,6 @@ export function createControls({
             maxAim
         );
 
-        // Basisrichting behouden en alleen de richtcorrectie toevoegen
         cannonPivots[index].rotation.y =
             baseRotations[index] + aimOffsets[index];
     }
