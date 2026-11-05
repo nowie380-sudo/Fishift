@@ -1,9 +1,6 @@
-// ========================================
-// FISHIFT - HARPOON SYSTEM
-// Fysieke speer met vaste heen- en terugbaan
-// ========================================
 
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 export function createHarpoon({
     scene,
@@ -12,113 +9,137 @@ export function createHarpoon({
     onCatch,
     onStatus
 }) {
-
-    // ====================================
-    // INSTELLINGEN
-    // ====================================
-
     const SETTINGS = {
         speed: 20,
         maxDistance: 12,
         collisionRadius: 0.55,
-        spearLength: 1.3
+        ropeRadius: 0.018,
+        muzzleOffset: new THREE.Vector3(0, 0.4, -2.9)
     };
 
     // ====================================
-    // SPEER MAKEN
+    // HARPOENPUNT LADEN
     // ====================================
+
+    const loader = new GLTFLoader();
 
     const spear = new THREE.Group();
-
-    const metalMaterial = new THREE.MeshStandardMaterial({
-        color: 0xb9c4c9,
-        metalness: 0.85,
-        roughness: 0.3
-    });
-
-    const darkMaterial = new THREE.MeshStandardMaterial({
-        color: 0x28343a,
-        metalness: 0.6,
-        roughness: 0.5
-    });
-
-    // Schacht
-    const shaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(
-            0.045,
-            0.055,
-            SETTINGS.spearLength,
-            8
-        ),
-        darkMaterial
-    );
-
-    shaft.rotation.x = Math.PI / 2;
-
-    spear.add(shaft);
-
-    // Speerpunt
-    const tip = new THREE.Mesh(
-        new THREE.ConeGeometry(
-            0.12,
-            0.35,
-            8
-        ),
-        metalMaterial
-    );
-
-    tip.rotation.x = -Math.PI / 2;
-    tip.position.z = -0.8;
-
-    spear.add(tip);
-
-    // Speer is pas zichtbaar na het schieten
     spear.visible = false;
-
     scene.add(spear);
 
+    let tipLoaded = false;
+
+    loader.load(
+        "./assets/models/harpoon_tip.glb",
+        (gltf) => {
+            const tipModel = gltf.scene;
+
+            tipModel.scale.setScalar(1);
+
+            spear.add(tipModel);
+            tipLoaded = true;
+
+            console.log("Harpoon tip geladen!");
+            onStatus("KANON GEREED");
+        },
+        undefined,
+        (error) => {
+            console.error("Harpoon tip kon niet geladen worden:", error);
+            onStatus("FOUT: HARPOENPUNT NIET GELADEN");
+        }
+    );
 
     // ====================================
-    // SPEER STATUS
+    // TOUW MAKEN
+    // ====================================
+
+    const ropeGeometry = new THREE.CylinderGeometry(
+        SETTINGS.ropeRadius,
+        SETTINGS.ropeRadius,
+        1,
+        8
+    );
+
+    const ropeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x333c42,
+        roughness: 0.85,
+        metalness: 0.15
+    });
+
+    const rope = new THREE.Mesh(ropeGeometry, ropeMaterial);
+
+    rope.visible = false;
+    scene.add(rope);
+
+    const ropeDirection = new THREE.Vector3();
+    const ropeMidpoint = new THREE.Vector3();
+    const worldUp = new THREE.Vector3(0, 1, 0);
+
+    function updateRope() {
+        const start = cannonPivot.localToWorld(
+            SETTINGS.muzzleOffset.clone()
+        );
+
+        const end = spear.position;
+
+        ropeDirection.subVectors(end, start);
+
+        const distance = ropeDirection.length();
+
+        if (distance < 0.01) {
+            rope.visible = false;
+            return;
+        }
+
+        rope.visible = true;
+
+        ropeMidpoint.copy(start).add(end).multiplyScalar(0.5);
+
+        rope.position.copy(ropeMidpoint);
+
+        rope.quaternion.setFromUnitVectors(
+            worldUp,
+            ropeDirection.normalize()
+        );
+
+        rope.scale.set(1, distance, 1);
+    }
+
+    // ====================================
+    // STATUS
     // ====================================
 
     let state = "ready";
 
-    let origin = new THREE.Vector3();
-    let direction = new THREE.Vector3();
+    const origin = new THREE.Vector3();
+    const direction = new THREE.Vector3();
 
     let travelled = 0;
-
-    // Alle vissen die aan deze speer hangen
     let caughtFish = [];
-
 
     // ====================================
     // SCHIETEN
     // ====================================
 
     function shoot() {
+        if (state !== "ready" || !tipLoaded) {
+            return false;
+        }
 
-        // Geen tweede schot tijdens een vlucht
-        if (state !== "ready") return false;
-
-        // Oorspronkelijke positie vastleggen
-        origin = cannonPivot.localToWorld(
-            new THREE.Vector3(0, 0.4, -2.9)
+        origin.copy(
+            cannonPivot.localToWorld(
+                SETTINGS.muzzleOffset.clone()
+            )
         );
 
-        // Oorspronkelijke richting vastleggen
         const rotation = new THREE.Quaternion();
 
         cannonPivot.getWorldQuaternion(rotation);
 
         direction.set(0, 0, -1);
-
         direction.applyQuaternion(rotation).normalize();
 
-        // Speer klaarzetten
         travelled = 0;
-
         caughtFish = [];
 
         spear.position.copy(origin);
@@ -132,27 +153,24 @@ export function createHarpoon({
 
         state = "outbound";
 
+        updateRope();
+
         onStatus("SPEER ONDERWEG");
 
         return true;
     }
-
 
     // ====================================
     // VIS RAKEN
     // ====================================
 
     function checkFishCollision() {
-
         const fish = fishSystem.checkHit(
             spear.position,
             SETTINGS.collisionRadius
         );
 
-        if (!fish) return;
-
-        // Voorkom dubbele vangsten
-        if (fish.caught) return;
+        if (!fish || fish.caught) return;
 
         const success = fishSystem.catchFish(fish);
 
@@ -160,23 +178,17 @@ export function createHarpoon({
 
         caughtFish.push(fish);
 
-onStatus(
-    caughtFish.length + " VIS(SEN) AAN DE SPEER"
-);
-
-
+        onStatus(
+            caughtFish.length + " VIS(SEN) AAN DE SPEER"
+        );
     }
 
-
     // ====================================
-    // GEVANGEN VISSEN MEE LATEN BEWEGEN
+    // GEVANGEN VISSEN BEWEGEN
     // ====================================
 
     function updateCaughtFish() {
-
         caughtFish.forEach((fish, index) => {
-
-            // Iedere vis krijgt een eigen plekje
             const offset = new THREE.Vector3(
                 0,
                 0.35 + index * 0.25,
@@ -186,125 +198,87 @@ onStatus(
             fish.model.position.copy(
                 spear.position.clone().add(offset)
             );
-
         });
-
     }
-
 
     // ====================================
     // TERUGHALEN
     // ====================================
 
     function retrieve() {
-
-        // Alle gevangen vissen worden nu opgeteld
         for (const fish of caughtFish) {
-
             scene.remove(fish.model);
 
             onCatch(fish);
 
-            // Nieuwe vis verschijnt later weer
             fishSystem.spawnFish();
-
         }
 
         caughtFish = [];
 
         spear.visible = false;
+        rope.visible = false;
 
         travelled = 0;
-
         state = "ready";
 
         onStatus("KANON GEREED");
-
     }
 
-
     // ====================================
-    // SPEER BEWEGEN
+    // UPDATE
     // ====================================
 
     function update(delta) {
-
         if (state === "ready") return;
 
         const movement = SETTINGS.speed * delta;
 
-        // --------------------------------
-        // HEENWEG
-        // --------------------------------
-
         if (state === "outbound") {
-
             travelled += movement;
 
-            // Altijd dezelfde opgeslagen richting
             spear.position.copy(origin).addScaledVector(
                 direction,
                 travelled
             );
 
-            // Controleren of de speer een vis raakt
             checkFishCollision();
 
-            // Maximale afstand bereikt
             if (travelled >= SETTINGS.maxDistance) {
-
                 travelled = SETTINGS.maxDistance;
 
                 state = "returning";
 
                 onStatus("SPEER KEERT TERUG");
-
             }
-
         }
 
-        // --------------------------------
-        // TERUGWEG
-        // --------------------------------
-
         else if (state === "returning") {
-
             travelled -= movement;
 
-            // Dezelfde baan, maar achteruit
             spear.position.copy(origin).addScaledVector(
                 direction,
                 travelled
             );
 
-            // Ook op de terugweg vissen controleren
             checkFishCollision();
 
-            // Speer is terug bij het kanon
             if (travelled <= 0) {
-
                 retrieve();
-
                 return;
-
             }
-
         }
 
-        // Gevangen vissen blijven aan de speer hangen
         updateCaughtFish();
-
+        updateRope();
     }
-
 
     // ====================================
     // PUBLIEKE FUNCTIES
     // ====================================
 
     return {
-
         shoot,
-
         update,
 
         getState() {
@@ -312,9 +286,7 @@ onStatus(
         },
 
         isReady() {
-            return state === "ready";
+            return state === "ready" && tipLoaded;
         }
-
     };
-
 }
