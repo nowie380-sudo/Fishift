@@ -1,5 +1,6 @@
 
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 export function createScene(container) {
     const scene = new THREE.Scene();
@@ -463,122 +464,10 @@ export function createScene(container) {
     }
 
     // HARPOENSTATIONS
-    function createHarpoonStation(x, z, rotationY) {
-        const pivot = new THREE.Group();
-        pivot.position.set(x, 1.2, z);
-        pivot.rotation.y = rotationY;
-        scene.add(pivot);
-
-        // Roterende voet
-        cylinder(pivot, 0.72, 0.82, 0.32, mat.darkMetal, 0, -0.9, 0, 20);
-        cylinder(pivot, 0.59, 0.59, 0.12, mat.metal, 0, -0.68, 0, 20);
-        cylinder(pivot, 0.43, 0.43, 0.08, mat.yellow, 0, -0.59, 0, 20);
-
-        // Bouten rondom de voet
-        for (let i = 0; i < 8; i++) {
-            const a = i / 8 * Math.PI * 2;
-            cylinder(pivot, 0.045, 0.045, 0.06, mat.metal,
-                Math.cos(a) * 0.66, -0.7, Math.sin(a) * 0.66, 8);
-        }
-
-        // Verstevigde behuizing
-        box(pivot, 0.88, 0.66, 1.05, mat.darkMetal, 0, -0.43, -0.2);
-        box(pivot, 0.76, 0.49, 0.92, mat.panel, 0, -0.38, -0.2);
-
-        // Zijplaten
-        for (const side of [-1, 1]) {
-            box(pivot, 0.08, 0.78, 0.85, mat.metal, side * 0.47, -0.37, -0.2);
-            box(pivot, 0.12, 0.16, 0.6, mat.yellow, side * 0.52, -0.37, -0.2);
-        }
-
-        // Hydraulische cilinders
-        for (const side of [-1, 1]) {
-            cylinder(pivot, 0.105, 0.105, 1.35, mat.darkMetal,
-                side * 0.36, 0.12, -1.0, 10);
-            cylinder(pivot, 0.065, 0.065, 0.95, mat.metal,
-                side * 0.36, 0.12, -1.0, 10);
-            pipe(pivot,
-                new THREE.Vector3(side * 0.37, -0.1, -0.55),
-                new THREE.Vector3(side * 0.37, 0.45, -1.9),
-                0.035, mat.copper);
-        }
-
-        // Hoofdloop
-        const barrel = cylinder(
-            pivot, 0.14, 0.19, 2.8, mat.darkMetal, 0, 0.4, -1.5, 16
-        );
-        barrel.rotation.x = Math.PI / 2;
-
-        // Buitenste loopringen
-        for (const z of [-0.55, -1.0, -2.0, -2.65]) {
-            const ring = new THREE.Mesh(
-                new THREE.TorusGeometry(0.17, 0.045, 8, 16), mat.metal
-            );
-            ring.position.set(0, 0.4, z);
-            pivot.add(ring);
-        }
-
-        // Monding: blijft op de positie die harpoon.js gebruikt
-        const muzzle = new THREE.Mesh(
-            new THREE.TorusGeometry(0.18, 0.055, 8, 16), mat.metal
-        );
-        muzzle.position.set(0, 0.4, -2.9);
-        pivot.add(muzzle);
-
-        // Binnenste donkere opening
-        cylinder(pivot, 0.125, 0.125, 0.025, mat.darkMetal,
-            0, 0.4, -2.91, 16);
-
-        // Harpoenrail bovenop de loop
-        box(pivot, 0.16, 0.1, 2.1, mat.metal, 0, 0.64, -1.45);
-        for (let i = 0; i < 5; i++) {
-            box(pivot, 0.22, 0.035, 0.08, mat.yellow,
-                0, 0.72, -0.65 - i * 0.37);
-        }
-
-        // Kabelhaspel achter de behuizing
-        cylinder(pivot, 0.31, 0.31, 0.16, mat.darkMetal, 0, 0.1, 0.35, 16);
-        cylinder(pivot, 0.24, 0.24, 0.3, mat.copper, 0, 0.1, 0.35, 16);
-        cylinder(pivot, 0.31, 0.31, 0.12, mat.metal, 0, 0.1, 0.35, 16);
-        cylinder(pivot, 0.07, 0.07, 0.45, mat.metal, 0, 0.1, 0.35, 12);
-
-        // Kabel naar de loop
-        pipe(pivot,
-            new THREE.Vector3(0.18, 0.15, 0.2),
-            new THREE.Vector3(0.18, 0.35, -0.8),
-            0.045, mat.copper);
-
-        // Vizier
-        box(pivot, 0.3, 0.08, 0.4, mat.darkMetal, 0, 0.84, -1.3);
-        box(pivot, 0.22, 0.04, 0.3, mat.cyan, 0, 0.9, -1.3);
-
-        // Bedieningsindicatoren
-        box(pivot, 0.32, 0.18, 0.06, mat.darkMetal, 0, -0.05, -0.68);
-        strip(pivot, 0.2, 0.055, 0.035, 0, -0.02, -0.72, mat.cyan);
-
-        for (let i = 0; i < 3; i++) {
-            cylinder(pivot, 0.035, 0.035, 0.04,
-                i === 0 ? mat.green : mat.red,
-                -0.1 + i * 0.1, -0.16, -0.72, 8);
-        }
-
-        // Handgrepen
-        for (const side of [-1, 1]) {
-            const handle = cylinder(
-                pivot, 0.045, 0.045, 0.5, mat.metal,
-                side * 0.55, -0.4, -0.3, 8
-            );
-            handle.rotation.z = Math.PI / 2;
-
-            cylinder(pivot, 0.065, 0.065, 0.18, mat.rubber,
-                side * 0.75, -0.4, -0.3, 8);
-        }
-
-        // Bevestigingsplaat op de vloer
-        box(pivot, 1.7, 0.08, 1.8, mat.darkMetal, 0, -1.08, 0);
-
-        return pivot;
-    }
+    
+    // ========================================
+    // HARPOONSTATIONS - ECHTE GLB MODELLEN
+    // ========================================
 
     const cannonPivots = [
         createHarpoonStation(-7.8, -3.2, Math.PI / 2),
@@ -586,6 +475,55 @@ export function createScene(container) {
         createHarpoonStation(7.8, -3.2, -Math.PI / 2),
         createHarpoonStation(7.8, 3.2, -Math.PI / 2)
     ];
+
+    function createHarpoonStation(x, z, rotationY) {
+        const pivot = new THREE.Group();
+
+        pivot.position.set(x, 1.2, z);
+        pivot.rotation.y = rotationY;
+
+        scene.add(pivot);
+
+        return pivot;
+    }
+
+    // Launcher één keer laden en vier keer hergebruiken
+    const launcherLoader = new GLTFLoader();
+
+    launcherLoader.load(
+        "./assets/models/harpoonlauncher1.glb",
+
+        (gltf) => {
+            const originalLauncher = gltf.scene;
+
+            originalLauncher.traverse((object) => {
+                if (object.isMesh) {
+                    object.castShadow = false;
+                    object.receiveShadow = false;
+                }
+            });
+
+            cannonPivots.forEach((pivot) => {
+                const launcher = originalLauncher.clone(true);
+
+                // Voorlopige modelinstellingen.
+                // Deze stellen we af op basis van je GLB.
+                launcher.position.set(0, -1.08, 0);
+                launcher.rotation.set(0, 0, 0);
+                launcher.scale.setScalar(1);
+
+                pivot.add(launcher);
+            });
+
+            console.log("Alle vier harpoonlaunchers geladen!");
+        },
+
+        undefined,
+
+        (error) => {
+            console.error("Harpoonlauncher kon niet geladen worden:", error);
+        }
+    );
 
     // ZITPOSITIES - ONGEWIJZIGD
     const harpoonSeatPositions = [
