@@ -470,11 +470,11 @@ export function createScene(container) {
     // ========================================
 
     const cannonPivots = [
-        createHarpoonStation(-7.8, -3.2, Math.PI / 2),
-        createHarpoonStation(-7.8, 3.2, Math.PI / 2),
-        createHarpoonStation(7.8, -3.2, -Math.PI / 2),
-        createHarpoonStation(7.8, 3.2, -Math.PI / 2)
-    ];
+    createHarpoonStation(-8.2, -3.2, Math.PI / 2),
+    createHarpoonStation(-8.2, 3.2, Math.PI / 2),
+    createHarpoonStation(8.2, -3.2, -Math.PI / 2),
+    createHarpoonStation(8.2, 3.2, -Math.PI / 2)
+];
 
     function createHarpoonStation(x, z, rotationY) {
         const pivot = new THREE.Group();
