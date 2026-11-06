@@ -14,11 +14,12 @@ export function createHarpoon({
         maxDistance: 12,
         collisionRadius: 0.55,
         ropeRadius: 0.018,
-        muzzleOffset: new THREE.Vector3(0, 0.4, -2.9)
+        muzzleOffset: new THREE.Vector3(0, 0.4, -2.9),
+        tipScale: 1
     };
 
     // ====================================
-    // HARPOENPUNT LADEN
+    // HARPOENPUNT
     // ====================================
 
     const loader = new GLTFLoader();
@@ -34,10 +35,21 @@ export function createHarpoon({
         (gltf) => {
             const tipModel = gltf.scene;
 
-            tipModel.scale.setScalar(1);
+            tipModel.scale.setScalar(SETTINGS.tipScale);
+
+            tipModel.traverse((object) => {
+                if (object.isMesh) {
+                    object.castShadow = false;
+                    object.receiveShadow = false;
+                }
+            });
 
             spear.add(tipModel);
             tipLoaded = true;
+
+            // Zet de harpoenpunt meteen in de loop.
+            updateReadyPosition();
+            spear.visible = true;
 
             console.log("Harpoon tip geladen!");
             onStatus("KANON GEREED");
@@ -50,7 +62,20 @@ export function createHarpoon({
     );
 
     // ====================================
-    // TOUW MAKEN
+    // POSITIE ALS DE HARPOEN GEREED IS
+    // ====================================
+
+    function updateReadyPosition() {
+        const muzzle = cannonPivot.localToWorld(
+            SETTINGS.muzzleOffset.clone()
+        );
+
+        spear.position.copy(muzzle);
+        cannonPivot.getWorldQuaternion(spear.quaternion);
+    }
+
+    // ====================================
+    // TOUW
     // ====================================
 
     const ropeGeometry = new THREE.CylinderGeometry(
@@ -67,7 +92,6 @@ export function createHarpoon({
     });
 
     const rope = new THREE.Mesh(ropeGeometry, ropeMaterial);
-
     rope.visible = false;
     scene.add(rope);
 
@@ -94,7 +118,6 @@ export function createHarpoon({
         rope.visible = true;
 
         ropeMidpoint.copy(start).add(end).multiplyScalar(0.5);
-
         rope.position.copy(ropeMidpoint);
 
         rope.quaternion.setFromUnitVectors(
@@ -150,10 +173,9 @@ export function createHarpoon({
         );
 
         spear.visible = true;
+        rope.visible = false;
 
         state = "outbound";
-
-        updateRope();
 
         onStatus("SPEER ONDERWEG");
 
@@ -210,17 +232,17 @@ export function createHarpoon({
             scene.remove(fish.model);
 
             onCatch(fish);
-
             fishSystem.spawnFish();
         }
 
         caughtFish = [];
 
-        spear.visible = false;
         rope.visible = false;
-
         travelled = 0;
         state = "ready";
+
+        updateReadyPosition();
+        spear.visible = true;
 
         onStatus("KANON GEREED");
     }
@@ -230,7 +252,13 @@ export function createHarpoon({
     // ====================================
 
     function update(delta) {
-        if (state === "ready") return;
+        if (state === "ready") {
+            if (tipLoaded) {
+                updateReadyPosition();
+            }
+
+            return;
+        }
 
         const movement = SETTINGS.speed * delta;
 
@@ -246,7 +274,6 @@ export function createHarpoon({
 
             if (travelled >= SETTINGS.maxDistance) {
                 travelled = SETTINGS.maxDistance;
-
                 state = "returning";
 
                 onStatus("SPEER KEERT TERUG");
