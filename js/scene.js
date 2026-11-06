@@ -508,10 +508,9 @@ export function createScene(container) {
 
                 // Voorlopige modelinstellingen.
                 // Deze stellen we af op basis van je GLB.
-               launcher.position.set(0, -1.08, 0);
+              launcher.position.set(0, -1.08, 0);
 launcher.rotation.set(0, Math.PI, 0);
-launcher.scale.setScalar(1.7);
-
+launcher.scale.setScalar(2.5);
                 pivot.add(launcher);
             });
 
