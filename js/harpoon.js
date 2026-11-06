@@ -14,7 +14,7 @@ export function createHarpoon({
         maxDistance: 12,
         collisionRadius: 0.55,
         ropeRadius: 0.018,
-        muzzleOffset: new THREE.Vector3(0, 0.4, -2.9),
+        muzzleOffset: new THREE.Vector3(0, 0.4, -0.7),
         tipScale: 1
     };
 
