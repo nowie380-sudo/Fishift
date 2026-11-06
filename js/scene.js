@@ -470,10 +470,10 @@ export function createScene(container) {
     // ========================================
 
     const cannonPivots = [
-    createHarpoonStation(-8.5, -3.2, Math.PI / 2),
-    createHarpoonStation(-8.5, 3.2, Math.PI / 2),
-    createHarpoonStation(8.5, -3.2, -Math.PI / 2),
-    createHarpoonStation(8.5, 3.2, -Math.PI / 2)
+    createHarpoonStation(-8.65, -3.2, Math.PI / 2),
+    createHarpoonStation(-8.65, 3.2, Math.PI / 2),
+    createHarpoonStation(8.65, -3.2, -Math.PI / 2),
+    createHarpoonStation(8.65, 3.2, -Math.PI / 2)
 ];
     
     function createHarpoonStation(x, z, rotationY) {
@@ -510,7 +510,7 @@ export function createScene(container) {
                 // Deze stellen we af op basis van je GLB.
               launcher.position.set(0, -1.08, 0);
 launcher.rotation.set(0, Math.PI, 0);
-launcher.scale.setScalar(3.5);
+launcher.scale.setScalar(3.3);
                 pivot.add(launcher);
             });
 
